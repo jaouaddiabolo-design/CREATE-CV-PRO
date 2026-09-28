@@ -1,0 +1,2164 @@
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CVPro — Créez un CV qui vous ouvre des portes</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- html2pdf.js for client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            accent: '#8b5cf6'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['Merriweather', 'Georgia', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@300;400;700&display=swap');
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* A4 Resume Dimensions for print/pdf preview */
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      box-sizing: border-box;
+      background: white;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      margin: 0 auto;
+      transform-origin: top center;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #resume-preview-node, #resume-preview-node * {
+        visibility: visible;
+      }
+      #resume-preview-node {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+
+    /* Animated pulse dot */
+    .dot-glow {
+      box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP NOTIFICATION BANNER -->
+  <div class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 text-white text-xs md:text-sm py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
+    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white">Nouveau</span>
+    <span>Générez votre CV adapté aux recruteurs en moins de 5 minutes avec notre IA.</span>
+    <button onclick="switchView('editor')" class="underline hover:text-indigo-100 font-semibold ml-1 cursor-pointer">Essayer gratuitement →</button>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('landing')">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i data-lucide="file-badge" class="w-5 h-5"></i>
+        </div>
+        <div class="flex items-baseline">
+          <span class="text-xl font-extrabold tracking-tight text-slate-900">CV<span class="text-indigo-600">Pro</span></span>
+          <span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 border border-indigo-200">PRO</span>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+        <button onclick="switchView('landing')" class="hover:text-indigo-600 transition-colors">Accueil</button>
+        <button onclick="switchView('templates')" class="hover:text-indigo-600 transition-colors">Modèles</button>
+        <button onclick="scrollToSection('pricing-section')" class="hover:text-indigo-600 transition-colors">Tarifs</button>
+        <button onclick="scrollToSection('faq-section')" class="hover:text-indigo-600 transition-colors">FAQ</button>
+      </nav>
+
+      <!-- Actions / Profile -->
+      <div class="flex items-center gap-3">
+        <button onclick="switchView('admin')" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+          <i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin
+        </button>
+        <button onclick="switchView('dashboard')" id="nav-dash-btn" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Mon Espace
+        </button>
+        <button onclick="switchView('editor')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Créer mon CV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================== -->
+  <!-- MAIN APP CONTAINER (SPA Views managed via switchView) -->
+  <!-- ======================================================== -->
+  <main class="flex-grow">
+
+    <!-- VIEW 1: LANDING PAGE -->
+    <div id="view-landing" class="block">
+      <!-- HERO SECTION -->
+      <section class="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28">
+        <div class="absolute inset-0 bg-gradient-to-b from-indigo-50/50 via-white to-white -z-10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold mb-6 animate-pulse">
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+            Plus de 18 500 CV créés le mois dernier au Maroc et en Europe
+          </div>
+
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
+            Créez un CV qui vous <br class="hidden sm:inline" />
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600">ouvre des portes</span>
+          </h1>
+
+          <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Passez les filtres de recrutement (ATS) et décrochez 3x plus d’entretiens. Éditeur ultra-intuitif, modèles testés et aide IA intelligente.
+          </p>
+
+          <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onclick="startCreatingCv()" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base shadow-xl shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center justify-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+              <span>Créer mon CV maintenant</span>
+            </button>
+            <button onclick="switchView('templates')" class="w-full sm:w-auto px-7 py-4 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-base transition-all flex items-center justify-center gap-2">
+              <i data-lucide="layout-template" class="w-5 h-5 text-slate-500"></i>
+              <span>Voir les modèles</span>
+            </button>
+          </div>
+
+          <div class="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs sm:text-sm text-slate-500 font-medium">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Optimisé pour ATS
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Téléchargement instantané PDF
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Sans engagement
+            </div>
+          </div>
+
+          <!-- Hero Mockup Showcase -->
+          <div class="mt-14 relative max-w-5xl mx-auto">
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-200">
+              <div class="relative bg-slate-900 rounded-xl overflow-hidden aspect-[16/9] flex items-center justify-center p-6 sm:p-10">
+                <div class="absolute inset-0 bg-[radial-gradient(#312e81_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+                <!-- Dynamic Graphic / Preview Cards -->
+                <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 max-w-3xl w-full">
+                  <div class="bg-white rounded-lg p-5 shadow-xl text-left w-full md:w-1/2 transform -rotate-1 hover:rotate-0 transition-transform">
+                    <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                      <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center">YN</div>
+                      <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Yassine Nadir</h4>
+                        <p class="text-xs text-indigo-600 font-medium">Chef de Projet Digital</p>
+                      </div>
+                    </div>
+                    <div class="space-y-2 mt-3">
+                      <div class="h-2 bg-slate-100 rounded w-5/6"></div>
+                      <div class="h-2 bg-slate-100 rounded w-4/6"></div>
+                      <div class="h-2 bg-slate-100 rounded w-3/6"></div>
+                    </div>
+                    <div class="mt-4 flex gap-1">
+                      <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">Agile</span>
+                      <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Scrum</span>
+                      <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded">SaaS</span>
+                    </div>
+                  </div>
+
+                  <div class="bg-indigo-950/80 backdrop-blur border border-indigo-500/30 text-white rounded-xl p-5 w-full md:w-1/2 text-left">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-semibold text-indigo-300 flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Suggestion IA
+                      </span>
+                      <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">Score +94%</span>
+                    </div>
+                    <p class="text-xs text-indigo-100 italic leading-relaxed">
+                      "Gestionnaire de projets passionné avec +4 ans d'expérience dans l'optimisation des parcours clients et l'augmentation du taux de conversion (+28%)."
+                    </p>
+                    <button onclick="startCreatingCv()" class="mt-4 w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-medium text-center transition-colors">
+                      Adopter ce style en 1 clic
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- COMMENT CA MARCHE -->
+      <section class="py-16 bg-white border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center max-w-3xl mx-auto">
+            <h2 class="text-xs font-bold tracking-widest text-indigo-600 uppercase">Processus fluide</h2>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">Comment ça marche ?</p>
+            <p class="mt-3 text-slate-600">Votre CV professionnel prêt à l'emploi en 4 étapes simples.</p>
+          </div>
+
+          <div class="mt-14 grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            <!-- Step 1 -->
+            <div class="relative bg-slate-50 p-6 rounded-2xl border border-slate-200/80 hover:border-indigo-300 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-4 shadow-md shadow-indigo-100">
+                1
+              </div>
+              <h3 class="font-bold text-slate-900 text-base">Choisissez un modèle</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Sélectionnez parmi nos designs optimisés pour attirer l'œil du recruteur.</p>
+            </div>
+            <!-- Step 2 -->
+            <div class="relative bg-slate-50 p-6 rounded-2xl border border-slate-200/80 hover:border-indigo-300 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-4 shadow-md shadow-indigo-100">
+                2
+              </div>
+              <h3 class="font-bold text-slate-900 text-base">Remplissez vos infos</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Formulaire simple et guidé. Voyez l'aperçu se mettre à jour en direct.</p>
+            </div>
+            <!-- Step 3 -->
+            <div class="relative bg-slate-50 p-6 rounded-2xl border border-slate-200/80 hover:border-indigo-300 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-4 shadow-md shadow-indigo-100">
+                3
+              </div>
+              <h3 class="font-bold text-slate-900 text-base">Améliorez avec l'IA</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Des phrases percutantes adaptées exactement à l'intitulé de votre poste.</p>
+            </div>
+            <!-- Step 4 -->
+            <div class="relative bg-slate-50 p-6 rounded-2xl border border-slate-200/80 hover:border-indigo-300 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-4 shadow-md shadow-indigo-100">
+                4
+              </div>
+              <h3 class="font-bold text-slate-900 text-base">Exportez en PDF</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Téléchargement immédiat haute définition, prêt à être envoyé.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PREVIEW MODÈLES POPULAIRES -->
+      <section class="py-16 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-10">
+            <div>
+              <h2 class="text-xs font-bold tracking-widest text-indigo-600 uppercase">Catalogue</h2>
+              <p class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">Des modèles pour chaque secteur</p>
+            </div>
+            <button onclick="switchView('templates')" class="mt-4 md:mt-0 text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+              Explorer tous les modèles <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="landing-templates-grid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- AVANTAGES / FEATURES -->
+      <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center max-w-3xl mx-auto">
+            <h2 class="text-xs font-bold tracking-widest text-indigo-600 uppercase">Pourquoi CVPro ?</h2>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">Pensé pour maximiser vos entretiens</p>
+          </div>
+
+          <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+              <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">100% Compatible ATS</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Les robots de tri des grandes entreprises lisent nos structures sans aucune erreur de parsing.</p>
+            </div>
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+              <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">Assistant IA Rédacteur</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">En panne d'inspiration ? L'IA transforme 3 mots-clés en descriptions de postes percutantes.</p>
+            </div>
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+              <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                <i data-lucide="download" class="w-5 h-5"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">Export PDF vectoriel</h3>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Un rendu ultra-net sur tous les écrans et lors de l'impression physique sans pixellisation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TARIFS SECTION -->
+      <section id="pricing-section" class="py-20 bg-slate-50 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center max-w-3xl mx-auto">
+            <h2 class="text-xs font-bold tracking-widest text-indigo-600 uppercase">Tarifs Transparents</h2>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">Investissez dans votre avenir professionnel</p>
+            <p class="mt-3 text-slate-600">Choisissez la formule adaptée à votre recherche d'emploi. Sans frais cachés.</p>
+          </div>
+
+          <div class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto" id="pricing-cards-container">
+            <!-- Dynamically populated or rendered -->
+          </div>
+          
+          <div class="mt-10 text-center text-xs text-slate-500">
+            <p>Paiement 100% sécurisé via Carte Bancaire, CMI ou Stripe. Facture disponible immédiatement.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ SECTION -->
+      <section id="faq-section" class="py-16 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-12">
+            <h2 class="text-xs font-bold tracking-widest text-indigo-600 uppercase">FAQ</h2>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">Questions fréquemment posées</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="border border-slate-200 rounded-xl p-5">
+              <h4 class="font-bold text-slate-900 text-base">Puis-je modifier mon CV après l'achat ?</h4>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Oui ! Vous conservez un accès complet à votre tableau de bord et pouvez effectuer des modifications et retélécharger votre CV autant de fois que souhaité pendant la durée de validité de votre offre.</p>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-5">
+              <h4 class="font-bold text-slate-900 text-base">Quels sont les moyens de paiement acceptés ?</h4>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Nous acceptons toutes les cartes bancaires marocaines (CMI) et internationales (Visa, Mastercard) dans un environnement crypté et sécurisé.</p>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-5">
+              <h4 class="font-bold text-slate-900 text-base">L'IA rédige-t-elle le CV à ma place ?</h4>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">L'IA vous assiste en générant des phrases d'accroche percutantes et des réalisations chiffrées selon le poste ciblé. Vous gardez le contrôle total sur le texte final.</p>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-5">
+              <h4 class="font-bold text-slate-900 text-base">Mes données personnelles sont-elles protégées ?</h4>
+              <p class="mt-2 text-sm text-slate-600 leading-relaxed">Absolument. Vos informations ne sont jamais revendues ni partagées. Vos données sont hébergées de manière sécurisée et vous pouvez les supprimer à tout moment.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA BANNER -->
+      <section class="py-16 bg-slate-900 text-white relative overflow-hidden">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Prêt à décrocher l'emploi de vos rêves ?</h2>
+          <p class="mt-4 text-slate-300 max-w-xl mx-auto text-base">Créez votre premier CV gratuitement en moins de 5 minutes avec nos modèles haut de gamme.</p>
+          <button onclick="startCreatingCv()" class="mt-8 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-600/30 transition-all inline-flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+            <span>Commencer sans inscription</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: TEMPLATES GALLERY -->
+    <!-- ======================================================== -->
+    <div id="view-templates" class="hidden py-10 bg-slate-50 min-h-screen">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <h1 class="text-3xl font-extrabold text-slate-900">Galerie des Modèles de CV</h1>
+          <p class="mt-2 text-slate-600 text-sm">Sélectionnez le modèle qui valorise le mieux votre profil et personnalisez-le immédiatement.</p>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-slate-200 mb-8 shadow-sm">
+          <!-- Categories Filter -->
+          <div class="flex flex-wrap items-center gap-2" id="category-filter-buttons">
+            <button onclick="filterTemplates('all')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white">Tous</button>
+            <button onclick="filterTemplates('Moderne')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Moderne</button>
+            <button onclick="filterTemplates('Classique')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Classique</button>
+            <button onclick="filterTemplates('Minimaliste')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Minimaliste</button>
+            <button onclick="filterTemplates('Créatif')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Créatif</button>
+            <button onclick="filterTemplates('ATS')" class="category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">ATS</button>
+          </div>
+
+          <!-- Free / Premium Filter -->
+          <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-4">
+            <span class="text-xs font-medium text-slate-500">Accès :</span>
+            <select id="access-filter" onchange="filterTemplates()" class="text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              <option value="all">Tous (Gratuits & Pro)</option>
+              <option value="free">Gratuits uniquement</option>
+              <option value="premium">Premium uniquement</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grid of Templates -->
+        <div id="templates-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: CV EDITOR & LIVE PREVIEW -->
+    <!-- ======================================================== -->
+    <div id="view-editor" class="hidden min-h-screen bg-slate-100">
+      
+      <!-- Editor Subheader Toolbar -->
+      <div class="sticky top-16 z-30 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button onclick="switchView('landing')" class="text-slate-500 hover:text-slate-800 text-sm flex items-center gap-1 font-medium">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Retour
+          </button>
+          <div class="h-4 w-px bg-slate-200"></div>
+          <span class="text-xs text-slate-500 font-medium hidden sm:inline" id="editor-status-text">Sauvegardé automatiquement</span>
+        </div>
+
+        <!-- Styling quick actions & CTA -->
+        <div class="flex items-center gap-3">
+          <!-- Theme Color Picker -->
+          <div class="flex items-center gap-1.5 border border-slate-200 rounded-lg px-2 py-1 bg-white">
+            <span class="text-xs text-slate-500 font-medium">Couleur :</span>
+            <input type="color" id="theme-color-input" value="#4f46e5" onchange="changeCvThemeColor(this.value)" class="w-6 h-6 rounded cursor-pointer border-0 p-0" title="Changer la couleur">
+          </div>
+
+          <!-- Font Choice -->
+          <select id="font-family-select" onchange="changeCvFont(this.value)" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700">
+            <option value="font-sans">Inter (Sans)</option>
+            <option value="font-serif">Merriweather (Sérif)</option>
+          </select>
+
+          <!-- Template Switcher in Editor -->
+          <select id="editor-template-select" onchange="switchTemplateFromEditor(this.value)" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 font-medium">
+            <!-- options inserted by script -->
+          </select>
+
+          <!-- AI Assistant button in bar -->
+          <button onclick="openAiAssistantModal()" class="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold flex items-center gap-1 transition-colors">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <span class="hidden md:inline">Assistant</span> IA
+          </button>
+
+          <!-- Action Download PDF Button -->
+          <button onclick="handleDownloadPdfClick()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Télécharger PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Editor Main Split: Left Form / Right Preview -->
+      <div class="max-w-[1700px] mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- LEFT: MULTI-STEP / ACCORDION FORM (Cols 5) -->
+        <div class="lg:col-span-5 space-y-4">
+          
+          <!-- Quick Target Role for AI Context -->
+          <div class="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/5 p-4 rounded-xl border border-indigo-200">
+            <label class="block text-xs font-bold text-indigo-900 mb-1 flex items-center gap-1">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5 text-indigo-600"></i>
+              Quel poste visez-vous ? (Contexte pour l'IA)
+            </label>
+            <div class="flex gap-2">
+              <input type="text" id="target-job-input" placeholder="ex: Développeur Fullstack React / Node.js" class="flex-grow text-xs rounded-lg border-slate-300 border px-3 py-2 focus:ring-1 focus:ring-indigo-500" value="Chef de Projet Digital" oninput="saveCurrentCvData()">
+              <button onclick="generateFullWithAi()" class="text-xs bg-indigo-600 text-white font-semibold px-3 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1 whitespace-nowrap">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> Auto-remplir
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 1: Informations Personnelles -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-personal')">
+              <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i> 1. Informations Personnelles
+              </div>
+              <i data-lucide="chevron-down" id="acc-personal-icon" class="w-4 h-4 text-slate-400 transition-transform"></i>
+            </div>
+            <div id="acc-personal" class="p-4 space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Prénom</label>
+                  <input type="text" id="input-firstname" value="Karim" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Nom</label>
+                  <input type="text" id="input-lastname" value="El Mansouri" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Email</label>
+                  <input type="email" id="input-email" value="karim.elmansouri@email.com" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Téléphone</label>
+                  <input type="tel" id="input-phone" value="+212 6 61 23 45 67" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Ville / Pays</label>
+                  <input type="text" id="input-location" value="Casablanca, Maroc" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">LinkedIn / Portfolio</label>
+                  <input type="text" id="input-website" value="linkedin.com/in/karim-elmansouri" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Profil & Résumé -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-profile')">
+              <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                <i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i> 2. Profil Professionnel
+              </div>
+              <i data-lucide="chevron-down" id="acc-profile-icon" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="acc-profile" class="p-4 space-y-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Titre Professionnel</label>
+                <input type="text" id="input-title" value="Chef de Projet Digital Senior" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-[11px] font-semibold text-slate-600">Résumé / Présentation</label>
+                  <button type="button" onclick="improveSummaryWithAi()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> ✨ Améliorer avec l'IA
+                  </button>
+                </div>
+                <textarea id="input-summary" rows="3" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">Professionnel axé sur les résultats avec plus de 6 ans d'expérience dans la transformation numérique, la gestion de projets agiles et le pilotage d'équipes pluridisciplinaires.</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Expériences -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-exp')">
+              <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                <i data-lucide="briefcase" class="w-4 h-4 text-indigo-600"></i> 3. Expériences Professionnelles
+              </div>
+              <i data-lucide="chevron-down" id="acc-exp-icon" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="acc-exp" class="p-4 space-y-4">
+              <div id="experiences-list" class="space-y-4">
+                <!-- Rendered dynamically -->
+              </div>
+              <button onclick="addExperienceItem()" class="w-full py-2 border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors flex items-center justify-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter une expérience
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 4: Formations -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-edu')">
+              <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-600"></i> 4. Formations & Diplômes
+              </div>
+              <i data-lucide="chevron-down" id="acc-edu-icon" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="acc-edu" class="p-4 space-y-4">
+              <div id="education-list" class="space-y-4">
+                <!-- Dynamically rendered -->
+              </div>
+              <button onclick="addEducationItem()" class="w-full py-2 border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors flex items-center justify-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter une formation
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 5: Compétences & Langues -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-skills')">
+              <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i> 5. Compétences & Langues
+              </div>
+              <i data-lucide="chevron-down" id="acc-skills-icon" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="acc-skills" class="p-4 space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-[11px] font-semibold text-slate-600">Compétences clés (séparées par une virgule)</label>
+                  <button type="button" onclick="suggestSkillsWithAi()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> ✨ Idées IA
+                  </button>
+                </div>
+                <input type="text" id="input-skills" value="Gestion de projet Agile, Scrum, JIRA, Roadmapping, Analyse de données, Leadership, UX/UI basics" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Langues (ex: Français (Natif), Anglais (Courant))</label>
+                <input type="text" id="input-languages" value="Français (Bilingue), Anglais (Professionnel C1), Arabe (Natif)" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Certifications (facultatif)</label>
+                <input type="text" id="input-certs" value="Scrum Master PSM I, Google Project Management Certificate" oninput="updateCvPreview()" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-1 focus:ring-indigo-500">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: LIVE PREVIEW DESK (Cols 7) -->
+        <div class="lg:col-span-7 sticky top-28">
+          
+          <div class="bg-slate-200/70 p-3 rounded-2xl border border-slate-300 flex items-center justify-between mb-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span class="font-bold text-slate-700">Aperçu en direct</span>
+              <span id="preview-watermark-notice" class="bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded ml-2">Mode Aperçu (Gratuit)</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="zoomPreview(0.85)" class="px-2 py-1 bg-white hover:bg-slate-100 rounded border border-slate-300 text-slate-700 font-bold">85%</button>
+              <button onclick="zoomPreview(1.0)" class="px-2 py-1 bg-white hover:bg-slate-100 rounded border border-slate-300 text-slate-700 font-bold">100%</button>
+            </div>
+          </div>
+
+          <!-- Preview Scroll Canvas -->
+          <div class="overflow-x-auto pb-10 bg-slate-200/50 p-4 rounded-2xl border border-slate-300 flex justify-center max-h-[820px] overflow-y-auto">
+            
+            <!-- A4 Document Target Node -->
+            <div id="resume-preview-node" class="a4-page relative overflow-hidden transition-all duration-200 p-8 sm:p-12 text-slate-800">
+              
+              <!-- Watermark Overlay (Conditional) -->
+              <div id="cv-watermark" class="pointer-events-none absolute inset-0 flex items-center justify-center rotate-[-30deg] z-20 select-none">
+                <span class="text-slate-300/35 text-5xl sm:text-7xl font-black tracking-widest uppercase border-4 border-slate-300/35 px-6 py-3 rounded-2xl">
+                  CVPRO — APERÇU
+                </span>
+              </div>
+
+              <!-- Inner Dynamic CV Content -->
+              <div id="cv-rendered-content">
+                <!-- Dynamically generated according to template style -->
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: USER DASHBOARD -->
+    <!-- ======================================================== -->
+    <div id="view-dashboard" class="hidden py-10 bg-slate-50 min-h-screen">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-8 border-b border-slate-200 gap-4">
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Tableau de bord</h1>
+            <p class="text-sm text-slate-600 mt-1">Gérez vos CV créés, vos téléchargements et votre abonnement.</p>
+          </div>
+          <button onclick="startCreatingCv()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Créer un nouveau CV
+          </button>
+        </div>
+
+        <!-- Dashboard User Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 my-8">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase">CV Enregistrés</span>
+            <div class="text-2xl font-black text-slate-900 mt-1" id="dash-cv-count">1</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Téléchargements PDF</span>
+            <div class="text-2xl font-black text-indigo-600 mt-1" id="dash-pdf-count">Illimités (Pro)</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Statut Compte</span>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-base font-bold text-slate-800" id="dash-plan-name">Formule Premium</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- My CVs Section -->
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <i data-lucide="folder" class="w-5 h-5 text-indigo-600"></i> Mes CV récents
+        </h2>
+
+        <div id="user-cv-list" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <!-- Filled dynamically -->
+        </div>
+
+        <!-- Orders & Billing History -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="p-5 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-base">Historique des Commandes & Factures</h3>
+            <span class="text-xs text-slate-500">Transaction sécurisée</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th class="px-6 py-3">Commande ID</th>
+                  <th class="px-6 py-3">Article / Offre</th>
+                  <th class="px-6 py-3">Date</th>
+                  <th class="px-6 py-3">Montant</th>
+                  <th class="px-6 py-3">Statut</th>
+                  <th class="px-6 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body" class="divide-y divide-slate-100">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 5: ADMIN DASHBOARD -->
+    <!-- ======================================================== -->
+    <div id="view-admin" class="hidden py-10 bg-slate-100 min-h-screen">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex items-center justify-between pb-6 border-b border-slate-300">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-900 text-white">ADMINISTRATION</span>
+              <h1 class="text-2xl font-black text-slate-900">Console CVPro SaaS</h1>
+            </div>
+            <p class="text-sm text-slate-600 mt-1">Supervision des ventes, gestion des templates et tarification en MAD.</p>
+          </div>
+          <button onclick="switchView('landing')" class="text-xs font-semibold px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700">
+            Retour au site
+          </button>
+        </div>
+
+        <!-- Admin Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 my-8">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-semibold text-slate-500">Chiffre d'Affaires Global</div>
+            <div class="text-2xl font-black text-slate-900 mt-1" id="admin-total-revenue">38 450 MAD</div>
+            <div class="text-xs text-emerald-600 mt-1 font-semibold">↑ +24% ce mois</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-semibold text-slate-500">Commandes Payées</div>
+            <div class="text-2xl font-black text-indigo-600 mt-1" id="admin-total-orders">842</div>
+            <div class="text-xs text-slate-500 mt-1">Taux conversion : 4.8%</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-semibold text-slate-500">Utilisateurs Inscrits</div>
+            <div class="text-2xl font-black text-slate-900 mt-1">12 400</div>
+            <div class="text-xs text-slate-500 mt-1">82% depuis mobile</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-semibold text-slate-500">Modèles Actifs</div>
+            <div class="text-2xl font-black text-slate-900 mt-1" id="admin-templates-count">4</div>
+            <div class="text-xs text-purple-600 mt-1 font-semibold">2 Gratuits / 2 Premium</div>
+          </div>
+        </div>
+
+        <!-- Pricing Management Tool -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-8 shadow-sm">
+          <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+            <i data-lucide="tag" class="w-4 h-4 text-indigo-600"></i> Modifier les Tarifs des Offres (MAD)
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">CV Unique (MAD)</label>
+              <input type="number" id="admin-price-single" value="29" class="w-full text-sm font-bold p-2 border border-slate-300 rounded-lg">
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Pack 3 CV (MAD)</label>
+              <input type="number" id="admin-price-pack" value="59" class="w-full text-sm font-bold p-2 border border-slate-300 rounded-lg">
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Abonnement Mensuel (MAD)</label>
+              <input type="number" id="admin-price-sub" value="49" class="w-full text-sm font-bold p-2 border border-slate-300 rounded-lg">
+            </div>
+          </div>
+          <button onclick="saveAdminPrices()" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-colors">
+            Enregistrer les modifications de tarifs
+          </button>
+        </div>
+
+        <!-- Manage Templates in Admin -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-600"></i> Gestion des Modèles de CV
+            </h3>
+            <button onclick="openAddTemplateModal()" class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter un modèle
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th class="px-4 py-3">Modèle</th>
+                  <th class="px-4 py-3">Catégorie</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Popularité</th>
+                  <th class="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-templates-table" class="divide-y divide-slate-100">
+                <!-- Dynamically filled -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: CHECKOUT / PAYMENT FLOW -->
+  <!-- ======================================================== -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 my-8">
+      
+      <div class="p-6 bg-slate-900 text-white relative">
+        <button onclick="closeCheckoutModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Finaliser mon CV</span>
+        <h3 class="text-xl font-extrabold mt-1">Débloquez votre CV Haute Définition</h3>
+        <p class="text-xs text-slate-300 mt-1">Téléchargement sans filigrane + formats PDF vectoriels + conseils IA.</p>
+      </div>
+
+      <div class="p-6 space-y-6">
+        
+        <!-- Offer Selection inside modal -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Choisissez votre formule</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between p-3.5 border-2 rounded-xl cursor-pointer hover:border-indigo-500 transition-colors border-indigo-600 bg-indigo-50/40">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="checkout-plan" value="single" checked class="text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <div class="font-bold text-sm text-slate-900">CV Unique Pro</div>
+                  <div class="text-xs text-slate-500">Export illimité de ce CV + sans watermark</div>
+                </div>
+              </div>
+              <span class="font-black text-indigo-600 text-base" id="modal-price-single">29 MAD</span>
+            </label>
+
+            <label class="flex items-center justify-between p-3.5 border rounded-xl cursor-pointer hover:border-indigo-500 transition-colors border-slate-200">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="checkout-plan" value="pack" class="text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <div class="font-bold text-sm text-slate-900">Pack 3 CV Pro</div>
+                  <div class="text-xs text-slate-500">Idéal pour postuler à différents postes</div>
+                </div>
+              </div>
+              <span class="font-black text-slate-900 text-base" id="modal-price-pack">59 MAD</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Simulated Card Payment Form -->
+        <div class="border-t border-slate-200 pt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase">Paiement Sécurisé</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">CMI</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">VISA</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">Mastercard</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Nom sur la carte</label>
+            <input type="text" id="pay-card-name" value="Karim El Mansouri" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Numéro de carte</label>
+            <div class="relative">
+              <input type="text" id="pay-card-number" value="4152 •••• •••• 8921" class="w-full text-xs rounded-lg border-slate-200 border p-2 pl-8 focus:ring-indigo-500">
+              <i data-lucide="credit-card" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5"></i>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Date d'expiration</label>
+              <input type="text" value="08/27" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">CVC / CVV</label>
+              <input type="text" value="784" class="w-full text-xs rounded-lg border-slate-200 border p-2 focus:ring-indigo-500">
+            </div>
+          </div>
+        </div>
+
+        <button onclick="processSimulatedPayment()" id="btn-submit-pay" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span>Payer et Télécharger mon PDF</span>
+        </button>
+
+        <p class="text-center text-[11px] text-slate-400">
+          Chiffrement SSL 256 bits • Déblocage instantané de votre fichier
+        </p>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: AI CONTENT GENERATOR / ENHANCER -->
+  <!-- ======================================================== -->
+  <div id="ai-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+      
+      <div class="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-5 h-5 text-indigo-200"></i>
+          <h3 class="font-bold text-base">Assistant IA CVPro</h3>
+        </div>
+        <button onclick="closeAiModal()" class="text-white/80 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Poste ciblé</label>
+          <input type="text" id="ai-modal-job-input" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 font-medium" value="Chef de Projet Digital">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Ce que l'IA va optimiser</label>
+          <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
+            <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Accroche et résumé professionnel percutant</div>
+            <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Réalisations chiffrées pour vos expériences</div>
+            <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Mots-clés recherchés par les recruteurs</div>
+          </div>
+        </div>
+
+        <div id="ai-modal-result-box" class="hidden">
+          <label class="block text-xs font-bold text-indigo-700 uppercase mb-1">Aperçu du texte généré :</label>
+          <div id="ai-generated-text" class="text-xs text-slate-800 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 max-h-36 overflow-y-auto"></div>
+        </div>
+
+        <button onclick="applyAiGeneration()" id="ai-generate-action-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-colors">
+          <i data-lucide="wand-2" class="w-4 h-4"></i>
+          <span>Générer et Appliquer au CV</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div class="space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+              <i data-lucide="file-badge" class="w-4 h-4"></i>
+            </div>
+            <span class="text-lg font-extrabold tracking-tight text-slate-900">CV<span class="text-indigo-600">Pro</span></span>
+          </div>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            La plateforme SaaS nouvelle génération pour concevoir un curriculum vitae moderne, percutant et adapté aux ATS.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Produit</h4>
+          <ul class="space-y-2 text-xs text-slate-600">
+            <li><button onclick="switchView('templates')" class="hover:text-indigo-600">Modèles de CV</button></li>
+            <li><button onclick="switchView('editor')" class="hover:text-indigo-600">Éditeur en ligne</button></li>
+            <li><button onclick="scrollToSection('pricing-section')" class="hover:text-indigo-600">Tarifs & Packs</button></li>
+            <li><button onclick="switchView('templates')" class="hover:text-indigo-600">CV Compatibles ATS</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Ressources & IA</h4>
+          <ul class="space-y-2 text-xs text-slate-600">
+            <li><a href="#" class="hover:text-indigo-600">Exemples par métier</a></li>
+            <li><a href="#" class="hover:text-indigo-600">Générateur IA de résumé</a></li>
+            <li><a href="#" class="hover:text-indigo-600">Guide de recrutement</a></li>
+            <li><button onclick="scrollToSection('faq-section')" class="hover:text-indigo-600">Centre d'aide / FAQ</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Légal & Contact</h4>
+          <ul class="space-y-2 text-xs text-slate-600">
+            <li><a href="#" class="hover:text-indigo-600">Mentions légales</a></li>
+            <li><a href="#" class="hover:text-indigo-600">Politique de confidentialité</a></li>
+            <li><a href="#" class="hover:text-indigo-600">Conditions Générales de Vente</a></li>
+            <li><span class="text-slate-400">contact@cvpro.ma</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
+        <p>© <span id="current-year"></span> CVPro Inc. Tous droits réservés.</p>
+        <p class="mt-2 sm:mt-0 flex items-center gap-1">Conçu avec précision pour les professionnels ambitieux.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT STATE AND LOGIC -->
+  <!-- ======================================================== -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    const APP_STATE = {
+      currentView: 'landing',
+      selectedTemplateId: 'tpl-moderne',
+      themeColor: '#4f46e5',
+      fontFamily: 'font-sans',
+      isPaid: false, // if true: no watermark on preview or export
+      pricing: {
+        single: 29,
+        pack: 59,
+        subscription: 49
+      },
+      templates: [
+        {
+          id: 'tpl-moderne',
+          name: 'Moderne Indigo',
+          category: 'Moderne',
+          isPremium: false,
+          accent: '#4f46e5',
+          description: 'Design épuré avec bandeau supérieur élégant et mise en page 2 colonnes équilibrée.',
+          badge: 'Populaire'
+        },
+        {
+          id: 'tpl-ats',
+          name: 'Executive ATS Optimisé',
+          category: 'ATS',
+          isPremium: false,
+          accent: '#1e293b',
+          description: 'Mise en page 1 colonne standardisée, reconnue à 100% par tous les logiciels ATS.',
+          badge: 'Certifié ATS'
+        },
+        {
+          id: 'tpl-minimaliste',
+          name: 'Minimaliste Chic',
+          category: 'Minimaliste',
+          isPremium: true,
+          accent: '#0f172a',
+          description: 'Typographie fine, beaucoup d’espace blanc, idéal pour les profils créatifs ou de direction.',
+          badge: 'Premium'
+        },
+        {
+          id: 'tpl-creatif',
+          name: 'Créatif Studio',
+          category: 'Créatif',
+          isPremium: true,
+          accent: '#7c3aed',
+          description: 'Sidebar latérale colorée et badges d’expertise pour un impact visuel marquant.',
+          badge: 'Premium'
+        }
+      ],
+      experiences: [
+        {
+          id: 1,
+          role: 'Chef de Projet Digital Senior',
+          company: 'InnoTech Solutions',
+          city: 'Casablanca',
+          startDate: '2021',
+          endDate: 'Présent',
+          description: 'Pilotage d’une équipe de 8 développeurs et designers. Augmentation du taux de conversion des applications clients de +24% en 1 an.'
+        },
+        {
+          id: 2,
+          role: 'Product Manager Junior',
+          company: 'Atlas Digital Agency',
+          city: 'Rabat',
+          startDate: '2019',
+          endDate: '2021',
+          description: 'Coordination des sprints Agile Scrum et rédaction des user stories pour des comptes Fintech et e-commerce.'
+        }
+      ],
+      education: [
+        {
+          id: 1,
+          degree: 'Master en Management de Projets Digitaux',
+          school: 'École Nationale de Commerce et de Gestion (ENCG)',
+          year: '2019'
+        },
+        {
+          id: 2,
+          degree: 'Licence en Informatique Appliquée',
+          school: 'Faculté des Sciences',
+          year: '2017'
+        }
+      ],
+      orders: [
+        { id: 'ORD-9842', item: 'CV Unique Pro (Moderne)', date: '12 Janv 2025', amount: '29 MAD', status: 'Payé' }
+      ]
+    };
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('current-year').innerText = new Date().getFullYear();
+      renderLandingTemplates();
+      renderTemplatesCatalog();
+      renderPricingCards();
+      renderExperiencesInputs();
+      renderEducationInputs();
+      populateEditorTemplateDropdown();
+      updateCvPreview();
+      renderAdminTable();
+      renderDashboardOrders();
+      lucide.createIcons();
+    });
+
+    // --- NAVIGATION LOGIC ---
+    function switchView(viewName) {
+      APP_STATE.currentView = viewName;
+      const views = ['landing', 'templates', 'editor', 'dashboard', 'admin'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) {
+          if (v === viewName) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function scrollToSection(sectionId) {
+      if (APP_STATE.currentView !== 'landing') {
+        switchView('landing');
+        setTimeout(() => {
+          const el = document.getElementById(sectionId);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      } else {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function startCreatingCv(templateId) {
+      if (templateId) {
+        selectTemplate(templateId);
+      }
+      switchView('editor');
+    }
+
+    // --- TEMPLATES LOGIC ---
+    function selectTemplate(tplId) {
+      APP_STATE.selectedTemplateId = tplId;
+      const tpl = APP_STATE.templates.find(t => t.id === tplId);
+      if (tpl) {
+        APP_STATE.themeColor = tpl.accent;
+        const colorInput = document.getElementById('theme-color-input');
+        if (colorInput) colorInput.value = tpl.accent;
+      }
+      const select = document.getElementById('editor-template-select');
+      if (select) select.value = tplId;
+      updateCvPreview();
+      switchView('editor');
+    }
+
+    function populateEditorTemplateDropdown() {
+      const select = document.getElementById('editor-template-select');
+      if (!select) return;
+      select.innerHTML = APP_STATE.templates.map(t => `
+        <option value="${t.id}" ${t.id === APP_STATE.selectedTemplateId ? 'selected' : ''}>
+          Modèle: ${t.name} ${t.isPremium ? '★' : ''}
+        </option>
+      `).join('');
+    }
+
+    function switchTemplateFromEditor(tplId) {
+      APP_STATE.selectedTemplateId = tplId;
+      const tpl = APP_STATE.templates.find(t => t.id === tplId);
+      if (tpl) {
+        APP_STATE.themeColor = tpl.accent;
+        document.getElementById('theme-color-input').value = tpl.accent;
+      }
+      updateCvPreview();
+    }
+
+    function renderLandingTemplates() {
+      const container = document.getElementById('landing-templates-grid');
+      if (!container) return;
+      const subset = APP_STATE.templates.slice(0, 3);
+      container.innerHTML = subset.map(t => getTemplateCardHtml(t)).join('');
+      lucide.createIcons();
+    }
+
+    function renderTemplatesCatalog(filteredTemplates = null) {
+      const container = document.getElementById('templates-grid');
+      if (!container) return;
+      const list = filteredTemplates || APP_STATE.templates;
+      container.innerHTML = list.map(t => getTemplateCardHtml(t)).join('');
+      lucide.createIcons();
+    }
+
+    function getTemplateCardHtml(t) {
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all flex flex-col group">
+          <!-- Thumbnail Mockup Preview -->
+          <div class="relative bg-slate-100 h-64 p-4 flex items-center justify-center overflow-hidden border-b border-slate-100">
+            <div class="w-48 h-60 bg-white shadow-md rounded p-3 text-[7px] leading-tight select-none pointer-events-none transform group-hover:scale-105 transition-transform duration-300">
+              <div class="h-3 w-16 mb-2 rounded" style="background-color: ${t.accent}"></div>
+              <div class="w-full h-1.5 bg-slate-200 rounded mb-1"></div>
+              <div class="w-2/3 h-1.5 bg-slate-200 rounded mb-3"></div>
+              <div class="flex gap-2">
+                <div class="w-1/3 space-y-1">
+                  <div class="h-1 bg-slate-200 rounded"></div>
+                  <div class="h-1 bg-slate-200 rounded"></div>
+                  <div class="h-1 bg-slate-200 rounded"></div>
+                </div>
+                <div class="w-2/3 space-y-1">
+                  <div class="h-1 bg-slate-300 rounded"></div>
+                  <div class="h-1 bg-slate-100 rounded"></div>
+                  <div class="h-1 bg-slate-100 rounded"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="absolute top-3 left-3 flex gap-1.5">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.isPremium ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+                ${t.isPremium ? '★ Premium' : 'Gratuit'}
+              </span>
+              <span class="text-[10px] font-semibold bg-white/90 backdrop-blur px-2 py-0.5 rounded-full text-slate-700 border border-slate-200">
+                ${t.category}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5 flex flex-col flex-grow">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-bold text-slate-900 text-base">${t.name}</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-4 flex-grow">${t.description}</p>
+            
+            <button onclick="selectTemplate('${t.id}')" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+              <span>Utiliser ce modèle</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterTemplates(cat = 'all') {
+      const access = document.getElementById('access-filter')?.value || 'all';
+      
+      // Update UI button active states
+      const buttons = document.querySelectorAll('.category-btn');
+      buttons.forEach(btn => {
+        if (cat === 'all' && btn.innerText.includes('Tous')) {
+          btn.className = 'category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white';
+        } else if (btn.innerText.includes(cat) && cat !== 'all') {
+          btn.className = 'category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white';
+        } else {
+          btn.className = 'category-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200';
+        }
+      });
+
+      let results = APP_STATE.templates;
+      if (cat !== 'all') {
+        results = results.filter(t => t.category.toLowerCase() === cat.toLowerCase());
+      }
+      if (access === 'free') {
+        results = results.filter(t => !t.isPremium);
+      } else if (access === 'premium') {
+        results = results.filter(t => t.isPremium);
+      }
+
+      renderTemplatesCatalog(results);
+    }
+
+    // --- PRICING CARDS LOGIC ---
+    function renderPricingCards() {
+      const container = document.getElementById('pricing-cards-container');
+      if (!container) return;
+
+      const p = APP_STATE.pricing;
+      container.innerHTML = `
+        <!-- Plan 1: Gratuit -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col justify-between shadow-sm">
+          <div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Découverte</span>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-4xl font-extrabold text-slate-900">0</span>
+              <span class="text-lg font-bold text-slate-500 ml-1">MAD</span>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Pour tester l'éditeur et visualiser son CV.</p>
+
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Accès aux modèles gratuits</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Éditeur en temps réel</li>
+              <li class="flex items-center gap-2 text-slate-400"><i data-lucide="x" class="w-4 h-4 text-slate-300"></i> Téléchargement sans filigrane</li>
+              <li class="flex items-center gap-2 text-slate-400"><i data-lucide="x" class="w-4 h-4 text-slate-300"></i> Générateur IA illimité</li>
+            </ul>
+          </div>
+          <button onclick="startCreatingCv()" class="mt-8 w-full py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors">
+            Essayer gratuitement
+          </button>
+        </div>
+
+        <!-- Plan 2: CV Unique (Best Seller) -->
+        <div class="bg-white rounded-3xl border-2 border-indigo-600 p-8 flex flex-col justify-between shadow-xl relative scale-105 z-10">
+          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-bold tracking-wide">
+            LE PLUS CHOISI
+          </div>
+          <div>
+            <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">CV Unique Pro</span>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-4xl font-extrabold text-slate-900" id="card-price-single">${p.single}</span>
+              <span class="text-lg font-bold text-slate-500 ml-1">MAD</span>
+              <span class="text-xs text-slate-400 ml-2">paiement 1 fois</span>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Le pack complet pour une recherche d'emploi immédiate.</p>
+
+            <ul class="mt-6 space-y-3 text-xs text-slate-700">
+              <li class="flex items-center gap-2 font-medium"><i data-lucide="check" class="w-4 h-4 text-indigo-600"></i> <strong>Tous les modèles</strong> (Gratuits + Pro)</li>
+              <li class="flex items-center gap-2 font-medium"><i data-lucide="check" class="w-4 h-4 text-indigo-600"></i> <strong>PDF HD sans aucun filigrane</strong></li>
+              <li class="flex items-center gap-2 font-medium"><i data-lucide="check" class="w-4 h-4 text-indigo-600"></i> <strong>Aide à la rédaction IA</strong> incluse</li>
+              <li class="flex items-center gap-2 font-medium"><i data-lucide="check" class="w-4 h-4 text-indigo-600"></i> Téléchargements illimités 30 jours</li>
+            </ul>
+          </div>
+          <button onclick="openCheckoutModal('single')" class="mt-8 w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all">
+            Choisir cette offre
+          </button>
+        </div>
+
+        <!-- Plan 3: Pack Carrière -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col justify-between shadow-sm">
+          <div>
+            <span class="text-xs font-bold text-purple-600 uppercase tracking-widest">Pack 3 CV Pro</span>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-4xl font-extrabold text-slate-900" id="card-price-pack">${p.pack}</span>
+              <span class="text-lg font-bold text-slate-500 ml-1">MAD</span>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Adaptez votre profil à 3 postes ou secteurs différents.</p>
+
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> 3 CV distincts & personnalisables</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Tous les modèles débloqués</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Optimisations ATS avancées</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Export PDF HD illimité</li>
+            </ul>
+          </div>
+          <button onclick="openCheckoutModal('pack')" class="mt-8 w-full py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors">
+            Sélectionner le pack
+          </button>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // --- ACCORDION IN EDITOR ---
+    function toggleAccordion(id) {
+      const el = document.getElementById(id);
+      const icon = document.getElementById(`${id}-icon`);
+      if (el) {
+        el.classList.toggle('hidden');
+      }
+      if (icon) {
+        icon.classList.toggle('rotate-180');
+      }
+    }
+
+    // --- EXPERIENCES DYNAMIC FORM ---
+    function renderExperiencesInputs() {
+      const container = document.getElementById('experiences-list');
+      if (!container) return;
+
+      container.innerHTML = APP_STATE.experiences.map((exp, index) => `
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 relative group space-y-2">
+          <button onclick="removeExperienceItem(${exp.id})" class="absolute top-2 right-2 text-slate-400 hover:text-red-500">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Poste</label>
+              <input type="text" value="${exp.role}" oninput="updateExpField(${exp.id}, 'role', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Entreprise</label>
+              <input type="text" value="${exp.company}" oninput="updateExpField(${exp.id}, 'company', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Dates (ex: 2021 - Présent)</label>
+              <input type="text" value="${exp.startDate} - ${exp.endDate}" oninput="updateExpDates(${exp.id}, this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Ville</label>
+              <input type="text" value="${exp.city}" oninput="updateExpField(${exp.id}, 'city', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-0.5">
+              <label class="text-[10px] font-semibold text-slate-500">Description / Réalisations</label>
+              <button type="button" onclick="improveExpWithAi(${exp.id})" class="text-[10px] text-indigo-600 font-semibold hover:underline flex items-center gap-0.5">
+                <i data-lucide="sparkles" class="w-2.5 h-2.5"></i> Améliorer IA
+              </button>
+            </div>
+            <textarea rows="2" oninput="updateExpField(${exp.id}, 'description', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">${exp.description}</textarea>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function addExperienceItem() {
+      const newId = Date.now();
+      APP_STATE.experiences.push({
+        id: newId,
+        role: 'Nouveau Poste',
+        company: 'Entreprise',
+        city: 'Casablanca',
+        startDate: '2023',
+        endDate: 'Présent',
+        description: 'Responsable de la mise en place des processus et coordination avec les parties prenantes.'
+      });
+      renderExperiencesInputs();
+      updateCvPreview();
+    }
+
+    function removeExperienceItem(id) {
+      APP_STATE.experiences = APP_STATE.experiences.filter(e => e.id !== id);
+      renderExperiencesInputs();
+      updateCvPreview();
+    }
+
+    function updateExpField(id, field, value) {
+      const item = APP_STATE.experiences.find(e => e.id === id);
+      if (item) {
+        item[field] = value;
+        updateCvPreview();
+      }
+    }
+
+    function updateExpDates(id, value) {
+      const item = APP_STATE.experiences.find(e => e.id === id);
+      if (item) {
+        const parts = value.split('-');
+        item.startDate = parts[0] ? parts[0].trim() : '';
+        item.endDate = parts[1] ? parts[1].trim() : '';
+        updateCvPreview();
+      }
+    }
+
+    // --- EDUCATION DYNAMIC FORM ---
+    function renderEducationInputs() {
+      const container = document.getElementById('education-list');
+      if (!container) return;
+
+      container.innerHTML = APP_STATE.education.map(edu => `
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 relative group space-y-2">
+          <button onclick="removeEducationItem(${edu.id})" class="absolute top-2 right-2 text-slate-400 hover:text-red-500">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+          <div>
+            <label class="text-[10px] font-semibold text-slate-500">Diplôme</label>
+            <input type="text" value="${edu.degree}" oninput="updateEduField(${edu.id}, 'degree', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Établissement</label>
+              <input type="text" value="${edu.school}" oninput="updateEduField(${edu.id}, 'school', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500">Année</label>
+              <input type="text" value="${edu.year}" oninput="updateEduField(${edu.id}, 'year', this.value)" class="w-full text-xs p-1.5 rounded border border-slate-300">
+            </div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function addEducationItem() {
+      const newId = Date.now();
+      APP_STATE.education.push({
+        id: newId,
+        degree: 'Diplôme / Certification',
+        school: 'Université / École',
+        year: '2022'
+      });
+      renderEducationInputs();
+      updateCvPreview();
+    }
+
+    function removeEducationItem(id) {
+      APP_STATE.education = APP_STATE.education.filter(e => e.id !== id);
+      renderEducationInputs();
+      updateCvPreview();
+    }
+
+    function updateEduField(id, field, value) {
+      const item = APP_STATE.education.find(e => e.id === id);
+      if (item) {
+        item[field] = value;
+        updateCvPreview();
+      }
+    }
+
+    // --- STYLING CONTROLS ---
+    function changeCvThemeColor(color) {
+      APP_STATE.themeColor = color;
+      updateCvPreview();
+    }
+
+    function changeCvFont(font) {
+      APP_STATE.fontFamily = font;
+      updateCvPreview();
+    }
+
+    function zoomPreview(scale) {
+      const preview = document.getElementById('resume-preview-node');
+      if (preview) {
+        preview.style.transform = `scale(${scale})`;
+      }
+    }
+
+    // --- REAL-TIME LIVE PREVIEW GENERATOR ---
+    function updateCvPreview() {
+      const container = document.getElementById('cv-rendered-content');
+      const watermark = document.getElementById('cv-watermark');
+      const watermarkNotice = document.getElementById('preview-watermark-notice');
+
+      if (!container) return;
+
+      // Handle Watermark state
+      if (APP_STATE.isPaid) {
+        if (watermark) watermark.classList.add('hidden');
+        if (watermarkNotice) {
+          watermarkNotice.innerText = 'Licence Pro Validée (Sans watermark)';
+          watermarkNotice.className = 'bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded ml-2';
+        }
+      } else {
+        if (watermark) watermark.classList.remove('hidden');
+        if (watermarkNotice) {
+          watermarkNotice.innerText = 'Mode Aperçu (Gratuit)';
+          watermarkNotice.className = 'bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded ml-2';
+        }
+      }
+
+      // Collect user input values safely
+      const firstName = document.getElementById('input-firstname')?.value || 'Karim';
+      const lastName = document.getElementById('input-lastname')?.value || 'El Mansouri';
+      const email = document.getElementById('input-email')?.value || 'karim.elmansouri@email.com';
+      const phone = document.getElementById('input-phone')?.value || '+212 6 61 23 45 67';
+      const location = document.getElementById('input-location')?.value || 'Casablanca, Maroc';
+      const website = document.getElementById('input-website')?.value || 'linkedin.com/in/karim';
+      const title = document.getElementById('input-title')?.value || 'Chef de Projet Digital';
+      const summary = document.getElementById('input-summary')?.value || '';
+      const skillsRaw = document.getElementById('input-skills')?.value || '';
+      const languagesRaw = document.getElementById('input-languages')?.value || '';
+      const certsRaw = document.getElementById('input-certs')?.value || '';
+
+      const skillsArray = skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
+      const languagesArray = languagesRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+      const color = APP_STATE.themeColor;
+      const font = APP_STATE.fontFamily;
+
+      // Set Font family to page container
+      const pageNode = document.getElementById('resume-preview-node');
+      if (pageNode) {
+        pageNode.className = `a4-page relative overflow-hidden transition-all duration-200 p-8 sm:p-12 text-slate-800 ${font}`;
+      }
+
+      // Choose layout according to selected template ID
+      if (APP_STATE.selectedTemplateId === 'tpl-ats') {
+        // ATS Layout: Strict, Clean single column
+        container.innerHTML = `
+          <div class="space-y-5 text-slate-900">
+            <div class="border-b-2 border-slate-900 pb-4 text-center">
+              <h1 class="text-2xl font-bold tracking-tight uppercase">${firstName} ${lastName}</h1>
+              <p class="text-sm font-semibold tracking-wide text-slate-700 mt-1">${title}</p>
+              <div class="mt-2 text-xs text-slate-600 flex flex-wrap justify-center gap-3 font-normal">
+                <span>${location}</span> • <span>${phone}</span> • <span>${email}</span> • <span>${website}</span>
+              </div>
+            </div>
+
+            ${summary ? `
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-2">Profil Professionnel</h3>
+                <p class="text-xs leading-relaxed text-slate-700">${summary}</p>
+              </div>
+            ` : ''}
+
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-2">Expériences Professionnelles</h3>
+              <div class="space-y-3">
+                ${APP_STATE.experiences.map(e => `
+                  <div>
+                    <div class="flex justify-between items-baseline text-xs font-bold">
+                      <span>${e.role} — <span class="font-normal text-slate-700">${e.company}, ${e.city}</span></span>
+                      <span class="text-slate-600 font-medium">${e.startDate} - ${e.endDate}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-700 mt-1 leading-relaxed">${e.description}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-2">Formation & Diplômes</h3>
+              <div class="space-y-2">
+                ${APP_STATE.education.map(ed => `
+                  <div class="flex justify-between items-baseline text-xs">
+                    <span class="font-bold">${ed.degree} <span class="font-normal text-slate-600">(${ed.school})</span></span>
+                    <span class="text-slate-600">${ed.year}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-2">Compétences & Langues</h3>
+              <div class="text-xs text-slate-700 space-y-1">
+                <p><strong>Compétences clés:</strong> ${skillsArray.join(' • ')}</p>
+                <p><strong>Langues:</strong> ${languagesArray.join(' • ')}</p>
+                ${certsRaw ? `<p><strong>Certifications:</strong> ${certsRaw}</p>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (APP_STATE.selectedTemplateId === 'tpl-creatif') {
+        // Creative Layout: Distinct colored sidebar + modern layout
+        container.innerHTML = `
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Sidebar -->
+            <div class="col-span-4 border-r border-slate-200 pr-5 space-y-5">
+              <div>
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl shadow-md mb-3" style="background-color: ${color}">
+                  ${firstName.charAt(0)}${lastName.charAt(0)}
+                </div>
+                <h1 class="text-lg font-black leading-tight text-slate-900">${firstName} <br/>${lastName}</h1>
+                <p class="text-xs font-bold mt-1" style="color: ${color}">${title}</p>
+              </div>
+
+              <div class="space-y-1.5 text-[11px] text-slate-600 border-t border-slate-100 pt-3">
+                <div class="font-semibold text-slate-900 text-xs mb-1">Contact</div>
+                <p>${email}</p>
+                <p>${phone}</p>
+                <p>${location}</p>
+                <p class="text-[10px] text-slate-500 break-all">${website}</p>
+              </div>
+
+              <div class="border-t border-slate-100 pt-3">
+                <div class="font-bold text-slate-900 text-xs mb-2">Compétences</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${skillsArray.map(s => `
+                    <span class="text-[10px] px-2 py-0.5 rounded font-medium text-white" style="background-color: ${color}cc">
+                      ${s}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-3">
+                <div class="font-bold text-slate-900 text-xs mb-1.5">Langues</div>
+                <div class="space-y-1 text-[11px] text-slate-600">
+                  ${languagesArray.map(l => `<p>• ${l}</p>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Main Area -->
+            <div class="col-span-8 space-y-5">
+              ${summary ? `
+                <div>
+                  <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Profil</h3>
+                  <p class="text-xs text-slate-700 leading-relaxed">${summary}</p>
+                </div>
+              ` : ''}
+
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Expériences</h3>
+                <div class="space-y-4">
+                  ${APP_STATE.experiences.map(e => `
+                    <div class="relative pl-3 border-l-2" style="border-color: ${color}">
+                      <div class="flex justify-between text-xs font-bold text-slate-900">
+                        <span>${e.role}</span>
+                        <span class="text-[10px] text-slate-500">${e.startDate} - ${e.endDate}</span>
+                      </div>
+                      <div class="text-[11px] font-semibold text-slate-600">${e.company} — ${e.city}</div>
+                      <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">${e.description}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Formations</h3>
+                <div class="space-y-2">
+                  ${APP_STATE.education.map(ed => `
+                    <div class="text-xs">
+                      <div class="font-bold text-slate-900">${ed.degree}</div>
+                      <div class="text-[11px] text-slate-600 flex justify-between">
+                        <span>${ed.school}</span>
+                        <span class="text-slate-400">${ed.year}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Default: Moderne & Minimaliste (Clean 2-Column top header)
+        container.innerHTML = `
+          <div>
+            <!-- Header bar with accent stripe -->
+            <div class="pb-6 border-b border-slate-200">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">${firstName} <span style="color: ${color}">${lastName}</span></h1>
+                  <p class="text-sm font-semibold tracking-wide text-slate-600 mt-1">${title}</p>
+                </div>
+                <div class="text-right text-xs text-slate-500 space-y-0.5">
+                  <p>${email}</p>
+                  <p>${phone}</p>
+                  <p>${location}</p>
+                  <p class="text-slate-400">${website}</p>
+                </div>
+              </div>
+
+              ${summary ? `
+                <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 leading-relaxed max-w-2xl">
+                  ${summary}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Body Grid -->
+            <div class="grid grid-cols-12 gap-8 mt-6">
+              
+              <!-- Left Body (7 Cols) -->
+              <div class="col-span-8 space-y-6">
+                <div>
+                  <h3 class="text-xs font-bold uppercase tracking-widest pb-1 border-b mb-3" style="color: ${color}; border-color: ${color}40">
+                    Expériences Professionnelles
+                  </h3>
+                  <div class="space-y-4">
+                    ${APP_STATE.experiences.map(e => `
+                      <div>
+                        <div class="flex justify-between items-baseline text-xs">
+                          <span class="font-bold text-slate-900">${e.role}</span>
+                          <span class="text-[11px] text-slate-500 font-medium">${e.startDate} - ${e.endDate}</span>
+                        </div>
+                        <div class="text-xs font-medium text-slate-600 mb-1">${e.company}, ${e.city}</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">${e.description}</p>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 class="text-xs font-bold uppercase tracking-widest pb-1 border-b mb-3" style="color: ${color}; border-color: ${color}40">
+                    Formation
+                  </h3>
+                  <div class="space-y-3">
+                    ${APP_STATE.education.map(ed => `
+                      <div class="text-xs">
+                        <div class="flex justify-between font-bold text-slate-800">
+                          <span>${ed.degree}</span>
+                          <span class="text-[11px] text-slate-500 font-normal">${ed.year}</span>
+                        </div>
+                        <div class="text-slate-600 text-[11px]">${ed.school}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Body (4 Cols) -->
+              <div class="col-span-4 space-y-6">
+                <div>
+                  <h3 class="text-xs font-bold uppercase tracking-widest pb-1 border-b mb-3" style="color: ${color}; border-color: ${color}40">
+                    Compétences
+                  </h3>
+                  <div class="flex flex-wrap gap-1.5">
+                    ${skillsArray.map(s => `
+                      <span class="text-[10px] font-semibold px-2 py-1 rounded bg-slate-100 text-slate-700">
+                        ${s}
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 class="text-xs font-bold uppercase tracking-widest pb-1 border-b mb-3" style="color: ${color}; border-color: ${color}40">
+                    Langues
+                  </h3>
+                  <div class="space-y-1.5 text-xs text-slate-600">
+                    ${languagesArray.map(l => `
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></span>
+                        <span>${l}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+
+                ${certsRaw ? `
+                  <div>
+                    <h3 class="text-xs font-bold uppercase tracking-widest pb-1 border-b mb-3" style="color: ${color}; border-color: ${color}40">
+                      Certifications
+                    </h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">${certsRaw}</p>
+                  </div>
+                ` : ''}
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // --- AI ASSISTANT FUNCTIONS ---
+    function openAiAssistantModal() {
+      const modal = document.getElementById('ai-modal');
+      const jobInput = document.getElementById('target-job-input')?.value;
+      if (jobInput) {
+        document.getElementById('ai-modal-job-input').value = jobInput;
+      }
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAiModal() {
+      const modal = document.getElementById('ai-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function improveSummaryWithAi() {
+      const targetRole = document.getElementById('target-job-input')?.value || 'professionnel';
+      const promptText = `Chef de projet orienté résultats avec expertise en transformation digitale. Stratège agile démontrant un fort leadership et une capacité avérée à livrer des projets à fort impact sur le ROI.`;
+      
+      const summaryInput = document.getElementById('input-summary');
+      if (summaryInput) {
+        summaryInput.value = promptText;
+        updateCvPreview();
+        showToast('✨ Résumé enrichi avec succès par l\'IA !');
+      }
+    }
+
+    function improveExpWithAi(expId) {
+      const exp = APP_STATE.experiences.find(e => e.id === expId);
+      if (exp) {
+        exp.description = `Pilotage stratégique de bout en bout : optimisation du backlog de 35%, réduction des délais de livraison de 20% et animation quotidienne des rituels Scrum pour 12 collaborateurs.`;
+        renderExperiencesInputs();
+        updateCvPreview();
+        showToast('✨ Description de poste optimisée avec l\'IA !');
+      }
+    }
+
+    function suggestSkillsWithAi() {
+      const skillsInput = document.getElementById('input-skills');
+      if (skillsInput) {
+        skillsInput.value = "Gestion Agile Scrum, Pilotage de KPIs, JIRA, Roadmap Produit, UX Discovery, Stakeholder Management, Budgétisation";
+        updateCvPreview();
+        showToast('✨ Compétences clés adaptées au poste suggérées !');
+      }
+    }
+
+    function generateFullWithAi() {
+      openAiAssistantModal();
+    }
+
+    function applyAiGeneration() {
+      const job = document.getElementById('ai-modal-job-input').value;
+      document.getElementById('input-title').value = job;
+      document.getElementById('input-summary').value = `Professionnel chevronné spécialisé en tant que ${job}. Reconnu pour sa capacité à allier vision stratégique et exécution technique rigoureuse avec une orientation vers les résultats mesurables.`;
+      
+      closeAiModal();
+      updateCvPreview();
+      showToast('✨ CV intégralement réaligné avec l\'IA pour : ' + job);
+    }
+
+    // --- CHECKOUT & PDF EXPORT FLOW ---
+    function handleDownloadPdfClick() {
+      if (APP_STATE.isPaid) {
+        // Direct clean download
+        generateActualPdfFile();
+      } else {
+        // Prompt checkout
+        openCheckoutModal('single');
+      }
+    }
+
+    function openCheckoutModal(planType = 'single') {
+      const modal = document.getElementById('checkout-modal');
+      document.getElementById('modal-price-single').innerText = `${APP_STATE.pricing.single} MAD`;
+      document.getElementById('modal-price-pack').innerText = `${APP_STATE.pricing.pack} MAD`;
+      
+      const radio = document.querySelector(`input[name="checkout-plan"][value="${planType}"]`);
+      if (radio) radio.checked = true;
+
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      const modal = document.getElementById('checkout-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function processSimulatedPayment() {
+      const btn = document.getElementById('btn-submit-pay');
+      btn.innerHTML = `<span class="inline-block animate-spin mr-2">⟳</span> Traitement sécurisé...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        APP_STATE.isPaid = true;
+        closeCheckoutModal();
+        
+        btn.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Payer et Télécharger mon PDF`;
+        btn.disabled = false;
+
+        // Add order to history
+        const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+        APP_STATE.orders.unshift({
+          id: orderId,
+          item: 'CV Unique Pro (Sans filigrane)',
+          date: 'Aujourd\'hui',
+          amount: `${APP_STATE.pricing.single} MAD`,
+          status: 'Payé'
+        });
+
+        // Update Dashboard
+        renderDashboardOrders();
+        updateCvPreview();
+
+        showToast('🎉 Paiement confirmé ! Votre PDF haute définition se génère...');
+
+        setTimeout(() => {
+          generateActualPdfFile();
+        }, 1000);
+
+      }, 1400);
+    }
+
+    function generateActualPdfFile() {
+      const element = document.getElementById('resume-preview-node');
+      const firstName = document.getElementById('input-firstname')?.value || 'Mon';
+      const lastName = document.getElementById('input-lastname')?.value || 'CV';
+
+      const opt = {
+        margin: 0,
+        filename: `CV_${firstName}_${lastName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Generate PDF
+      if (window.html2pdf) {
+        html2pdf().set(opt).from(element).save().then(() => {
+          showToast('✅ Téléchargement du PDF terminé !');
+        });
+      } else {
+        window.print();
+      }
+    }
+
+    // --- DASHBOARD RENDERING ---
+    function renderDashboardOrders() {
+      const tbody = document.getElementById('orders-table-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = APP_STATE.orders.map(o => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-6 py-4 font-mono font-bold text-xs text-slate-800">${o.id}</td>
+          <td class="px-6 py-4 font-medium text-slate-900">${o.item}</td>
+          <td class="px-6 py-4 text-xs">${o.date}</td>
+          <td class="px-6 py-4 font-bold text-slate-900">${o.amount}</td>
+          <td class="px-6 py-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              ${o.status}
+            </span>
+          </td>
+          <td class="px-6 py-4">
+            <button onclick="handleDownloadPdfClick()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      // Also render the User CV List card
+      const cvContainer = document.getElementById('user-cv-list');
+      if (cvContainer) {
+        cvContainer.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Principal</span>
+              <span class="text-xs text-slate-400">Modifié il y a 5 min</span>
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">CV — Chef de Projet Digital</h4>
+            <p class="text-xs text-slate-500 mt-1">Modèle Moderne Indigo • Optimisé ATS</p>
+            
+            <div class="mt-6 flex items-center gap-2">
+              <button onclick="switchView('editor')" class="flex-grow py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Modifier
+              </button>
+              <button onclick="handleDownloadPdfClick()" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-600" title="Télécharger">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // --- ADMIN DASHBOARD ACTIONS ---
+    function renderAdminTable() {
+      const table = document.getElementById('admin-templates-table');
+      if (!table) return;
+
+      table.innerHTML = APP_STATE.templates.map(t => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-semibold text-slate-900">${t.name}</td>
+          <td class="px-4 py-3 text-xs">${t.category}</td>
+          <td class="px-4 py-3">
+            <button onclick="toggleTemplatePremium('${t.id}')" class="px-2 py-0.5 text-xs font-semibold rounded-full ${t.isPremium ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+              ${t.isPremium ? '★ Premium' : 'Gratuit'} (cliquer pour changer)
+            </button>
+          </td>
+          <td class="px-4 py-3 text-xs text-slate-500">98% satisfaction</td>
+          <td class="px-4 py-3 text-right">
+            <button onclick="deleteTemplate('${t.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function toggleTemplatePremium(id) {
+      const tpl = APP_STATE.templates.find(t => t.id === id);
+      if (tpl) {
+        tpl.isPremium = !tpl.isPremium;
+        renderAdminTable();
+        renderTemplatesCatalog();
+        showToast(`Statut de ${tpl.name} modifié en ${tpl.isPremium ? 'Premium' : 'Gratuit'}`);
+      }
+    }
+
+    function deleteTemplate(id) {
+      if (APP_STATE.templates.length <= 1) {
+        alert('Impossible de supprimer le dernier modèle.');
+        return;
+      }
+      APP_STATE.templates = APP_STATE.templates.filter(t => t.id !== id);
+      renderAdminTable();
+      renderTemplatesCatalog();
+      showToast('Modèle supprimé de la base.');
+    }
+
+    function openAddTemplateModal() {
+      const name = prompt("Nom du nouveau modèle :", "Minimaliste Noir & Blanc");
+      if (!name) return;
+      const category = prompt("Catégorie (Moderne, Classique, Minimaliste, ATS, Créatif) :", "Minimaliste");
+      const newTpl = {
+        id: 'tpl-' + Date.now(),
+        name: name,
+        category: category || 'Moderne',
+        isPremium: true,
+        accent: '#334155',
+        description: 'Nouveau modèle ajouté par le panneau administrateur.',
+        badge: 'Nouveau'
+      };
+      APP_STATE.templates.push(newTpl);
+      renderAdminTable();
+      renderTemplatesCatalog();
+      populateEditorTemplateDropdown();
+      showToast('Nouveau modèle publié avec succès !');
+    }
+
+    function saveAdminPrices() {
+      const single = parseInt(document.getElementById('admin-price-single').value) || 29;
+      const pack = parseInt(document.getElementById('admin-price-pack').value) || 59;
+      const sub = parseInt(document.getElementById('admin-price-sub').value) || 49;
+
+      APP_STATE.pricing.single = single;
+      APP_STATE.pricing.pack = pack;
+      APP_STATE.pricing.subscription = sub;
+
+      renderPricingCards();
+      showToast('Tarifs mis à jour en MAD dans toute l\'application !');
+    }
+
+    // --- SIMPLE TOAST NOTIFICATION ---
+    function showToast(message) {
+      const existing = document.getElementById('app-toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.className = 'fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-slate-700 animate-bounce';
+      toast.innerHTML = `<span>${message}</span>`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3500);
+    }
+  </script>
+
+</body>
+</html>
